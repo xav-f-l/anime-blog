@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-// ── SUPABASE ──────────────────────────────────────────────────────────────────
+// ── SUPABASE ───────────────────
+// ──────────────────────────────────────────────
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -27,10 +28,22 @@ function useAuth() {
   }, []);
 
   const signUp = async (email, password) => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    return error?.message || null;
-  };
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  });
 
+  if (!error && data.user) {
+    await supabase.from("profiles").insert([
+      {
+        id: data.user.id,      // important: même id que auth user
+        email: data.user.email
+      }
+    ]);
+  }
+
+  return error?.message || null;
+};
   const signIn = async (email, password) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return error?.message || null;
@@ -492,6 +505,7 @@ function ContribuerPage({ onAddPost, user, onAuthClick }) {
           <input value={form.author} onChange={handleChange("author")} placeholder="ex: OtakuSama" style={fieldStyle(errors.author)} />
           {errors.author && <p style={errorStyle}>{errors.author}</p>}
         </div>
+
         <div>
           <label style={labelStyle}>URL image de couverture (optionnel)</label>
           <input value={form.cover} onChange={handleChange("cover")} placeholder="https://..." style={fieldStyle(false)} />
