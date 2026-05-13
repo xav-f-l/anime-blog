@@ -478,33 +478,45 @@ function ContribuerPage({ onAddPost, user, onAuthClick }) {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: null }));
   };
 
- const sendEmail = async (formData) => {
-  await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${import.meta.env.VITE_RESEND_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: "ANIMÛ <onboarding@resend.dev>",
-      to: "xfausthernze@gmail.com",
-      subject: `Nouvel article : ${formData.title}`,
-      html: `...`, // Resend utilise le template ID directement
-    }),
-  });
-};
-  const handleSubmit = async () => {
-    if (!user) { onAuthClick(); return; }
-    const e = validate();
-    if (Object.keys(e).length) { setErrors(e); return; }
-    setSending(true);
-    const postData = { title: form.title, category: form.category, excerpt: form.excerpt, author: form.author, cover: form.cover || "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&q=80" };
-    await onAddPost(postData);
-    await sendEmail(postData);
-    setSent(true); setSending(false);
-    setForm({ title: "", category: "Review", excerpt: "", author: "", cover: "" });
-    setTimeout(() => setSent(false), 4000);
+ const handleSubmit = async () => {
+  if (!user) {
+    onAuthClick();
+    return;
+  }
+
+  const e = validate();
+  if (Object.keys(e).length) {
+    setErrors(e);
+    return;
+  }
+
+  setSending(true);
+
+  const postData = {
+    title: form.title,
+    category: form.category,
+    excerpt: form.excerpt,
+    author: form.author,
+    cover:
+      form.cover ||
+      "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&q=80",
   };
+
+  await onAddPost(postData);
+
+  setSent(true);
+  setSending(false);
+
+  setForm({
+    title: "",
+    category: "Review",
+    excerpt: "",
+    author: "",
+    cover: "",
+  });
+
+  setTimeout(() => setSent(false), 4000);
+};
 
   const fieldStyle = (err) => ({ ...baseInput, border: `1.5px solid ${err ? "#ff4e4e" : "rgba(255,255,255,0.12)"}` });
 
@@ -521,7 +533,7 @@ function ContribuerPage({ onAddPost, user, onAuthClick }) {
         </div>
       )}
 
-      {sent && <div style={{ background: "rgba(78,255,158,0.1)", border: "1px solid #4eff9e", borderRadius: 10, padding: "14px 18px", marginBottom: 24, fontFamily: "'Outfit', sans-serif", color: "#4eff9e", fontSize: 14 }}>✅ Article soumis ! Une notification t'a été envoyée par email.</div>}
+      {sent && <div style={{ background: "rgba(78,255,158,0.1)", border: "1px solid #4eff9e", borderRadius: 10, padding: "14px 18px", marginBottom: 24, fontFamily: "'Outfit', sans-serif", color: "#4eff9e", fontSize: 14 }}>✅ Article soumis avec succès ! Il sera examiné avant publication.</div>}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 20, opacity: user ? 1 : 0.4, pointerEvents: user ? "auto" : "none" }}>
         <div>
