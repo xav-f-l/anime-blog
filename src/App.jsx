@@ -31,18 +31,24 @@ function useAuth() {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      emailRedirectTo: window.location.origin, // redirection après confirmation
+    },
   });
 
-  if (!error && data.user) {
+  if (error) return error.message;
+
+  // créer profil seulement si user créé
+  if (data.user) {
     await supabase.from("profiles").insert([
       {
-        id: data.user.id,      // important: même id que auth user
-        email: data.user.email
-      }
+        id: data.user.id,
+        email: data.user.email,
+      },
     ]);
   }
 
-  return error?.message || null;
+  return null;
 };
   const signIn = async (email, password) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
