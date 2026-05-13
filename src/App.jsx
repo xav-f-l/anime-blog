@@ -27,7 +27,7 @@ function useAuth() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
- const signUp = async (email, password) => {
+const signUp = async (email, password) => {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -38,44 +38,48 @@ function useAuth() {
 
   if (error) return error.message;
 
+  // Email de bienvenue — ne bloque pas si ça échoue
   if (data.user) {
-    // Créer le profil
-    await supabase.from("profiles").insert([{
-      id: data.user.id,
-      email: data.user.email,
-    }]);
+    try {
+      await supabase.from("profiles").insert([{
+        id: data.user.id,
+        email: data.user.email,
+      }]);
 
-    // ✦ Email de bienvenue via Resend
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${import.meta.env.VITE_RESEND_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "ANIMÛ <onboarding@resend.dev>",
-        to: email,
-        subject: "✦ Bienvenue sur ANIMÛ !",
-        html: `
-          <div style="background:#0a0a14;padding:40px;font-family:Helvetica,sans-serif;max-width:560px;margin:0 auto;border-radius:16px;border:1px solid rgba(255,78,78,0.2)">
-            <div style="text-align:center;margin-bottom:32px">
-              <span style="font-size:40px">⛩️</span>
-              <h1 style="color:#ff4e4e;letter-spacing:4px;font-size:22px;margin:12px 0 4px">ANIMÛ</h1>
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${import.meta.env.VITE_RESEND_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: "ANIMÛ <onboarding@resend.dev>",
+          to: email,
+          subject: "✦ Bienvenue sur ANIMÛ !",
+          html: `
+            <div style="background:#0a0a14;padding:40px;font-family:Helvetica,sans-serif;max-width:560px;margin:0 auto;border-radius:16px;border:1px solid rgba(255,78,78,0.2)">
+              <div style="text-align:center;margin-bottom:32px">
+                <span style="font-size:40px">⛩️</span>
+                <h1 style="color:#ff4e4e;letter-spacing:4px;font-size:22px;margin:12px 0 4px">ANIMÛ</h1>
+              </div>
+              <h2 style="color:#fff;font-size:20px;margin-bottom:12px">Bienvenue, ${email.split("@")[0]} !</h2>
+              <p style="color:#aaa;line-height:1.7;margin-bottom:24px">
+                Tu fais maintenant partie de la communauté ANIMÛ 🎌<br/>
+                Vérifie ton email pour confirmer ton compte !
+              </p>
+              <div style="text-align:center">
+                <a href="${window.location.origin}" style="background:linear-gradient(135deg,#ff4e4e,#ff8c42);color:#fff;text-decoration:none;padding:14px 32px;border-radius:30px;font-weight:700;font-size:15px;display:inline-block">
+                  Découvrir les articles →
+                </a>
+              </div>
             </div>
-            <h2 style="color:#fff;font-size:20px;margin-bottom:12px">Bienvenue, ${email.split("@")[0]} !</h2>
-            <p style="color:#aaa;line-height:1.7;margin-bottom:24px">
-              Tu fais maintenant partie de la communauté ANIMÛ 🎌<br/>
-              Vérifie ton email pour confirmer ton compte, puis reviens liker, commenter et contribuer !
-            </p>
-            <div style="text-align:center">
-              <a href="${window.location.origin}" style="background:linear-gradient(135deg,#ff4e4e,#ff8c42);color:#fff;text-decoration:none;padding:14px 32px;border-radius:30px;font-weight:700;font-size:15px;display:inline-block">
-                Découvrir les articles →
-              </a>
-            </div>
-          </div>
-        `,
-      }),
-    });
+          `,
+        }),
+      });
+    } catch (e) {
+      console.warn("Email de bienvenue non envoyé:", e);
+      // On continue quand même — l'inscription est réussie
+    }
   }
 
   return null;
